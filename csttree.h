@@ -9,6 +9,10 @@
 #define _CSTTREE_H
 
 #include <math.h>
+#include <malloc.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #define ROWS 7
 #define LISTS 4
@@ -31,28 +35,24 @@ typedef struct
 
 typedef struct
 {
-    int key;
-    int value;
+    KV_T key;
+    KV_T value;
 }kv_pair;
 
 typedef struct
 {
     KV_T maxarr[MAXARR_KEY_NUM];
-    kv_list* data_node_addr;//double dimensional array with structure or something... 
-    key_node* leftchild;
-    key_node* rightchild;
+    key_node* child_node;
+    kv_list* data_node_addr;//double dimensional array with structure or something...
+    int bf;
+    bool exist;
 }key_node;
 
 typedef struct
 {
     kv_pair kv_data[ROWS][LISTS];
 }kv_list;
-
-typedef struct
-{
-    kv_pair array[NODE_KV_NUM];       
-}data_node;
-
+ 
 class csttree
 {
 public:
@@ -62,21 +62,101 @@ keycompare(KV_T key1, KV_T key2)
     return key1 < key2 ? -1 : key1 == key2 ? 0 : 1;
 }
 
-key_node* Findmin(key_node* tnode)
+
+
+bool Insert(KV_T key, KV_T value)
 {
-    if(tnode != NULL)
+    if(root = NULL)
     {
-        if(tnode->leftchild == NULL)
+        root =  (key_node*)malloc(sizeof(key_node));
+        memset(root, 0, sizeof(key_node));
+        root->kv_list = (kv_list*)malloc(sizeof(kv_list));
+        memset(root->kv_list, 0, sizeof(kv_list));
+        maxarr[0] = key;
+        child_node = NULL;
+        data_node_addr->kv_data[0][0].key = key;
+        data_node_addr->kv_data[0][0].value = value;
+        bf = 0;
+        exist = true;
+        return true;
+    }
+    else
+    {
+        key_node* tnode = root;
+        bool ret = _insert(key, value, tnode);
+        return ret;
+    }
+}
+
+char array_find(char index)
+{
+    
+}
+
+bool _insert(KV_T key, KV_T value, key_node* tnode)
+{
+    KV_T keymin = Findmin(tnode, 0);
+    KV_T keymax = Findmax(tnode, 0);
+    char diff1 = keycompare(key, keymin);
+    char diff2 = keycompare(key, keymax);
+    if(diff1 <= 0)
+}
+
+KV_T Findmin(key_node* tnode, char count)
+{
+    if(tnode->exist = true)
+    {
+        if(tnode->maxarr[0] == 0)
         {
-            return tnode;
+            perror("error : the root is 0 but the exist is true");
+            return NULL;
+        }
+        else if(tnode->maxarr[count*2+1] == 0)
+        {
+            return tnode->data_node_addr->kv_data[0][count].key;
+        }
+        else if((tnode->maxarr[count*2+1] > 0)&&(count < 3))
+        {
+            return Findmin(tnode, count*2+1)
         }
         else
         {
-            return Findmin(tnode->chil_addr);
+            return tnode->data_node_addr->kv_data[0][count].key;
         }
     }
-    fprintf(stdout,"FUNCTION %s : error!\n",__func__);
-    return NULL;
+    else
+    {
+        return NULL;
+    }
+}
+
+KV_T Findmax(key_node* tnode, char count)
+{
+    count = 0;
+    if(tnode->exist = true)
+    {
+        if(tnode->maxarr[0] == 0)
+        {
+            perror("error : the root is 0 but the exist is true");
+            return NULL;
+        }
+        else if(tnode->maxarr[count*2+2] == 0)
+        {
+            return tnode->maxarr[count];
+        }
+        else if(tnode->maxarr[count*2+2] > 0)&&(count < 3)
+        {
+            return Findmax(tnode, count*2+2)
+        }
+        else
+        {
+            return tnode->maxarr[count];
+        }
+    }
+    else
+    {
+        return NULL;
+    }
 }
 
 key_node* FindMax(key_node* tnode)
@@ -221,6 +301,20 @@ KV_T Find(KV_T key);
         }
     }
     fprintf(stdout,"FUNCTION %s : Did not find the key-value\n");
+    return -1;
+}
+
+int BalanceTree(key_node* tnode)
+{
+    
+}
+
+void insert(int key, int value)
+{
+    if(root == NULL)
+    {
+        root = (key_node*)malloc(sizeof(key_node));
+    }
 }
 
 
