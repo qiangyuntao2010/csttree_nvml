@@ -42,11 +42,16 @@ typedef struct
 typedef struct
 {
     KV_T maxarr[MAXARR_KEY_NUM];
-    key_node* child_node;
+    key_node* child_node_array[8];
     kv_list* data_node_addr;//double dimensional array with structure or something...
     int bf;
     bool exist;
 }key_node;
+
+/*typedef struct
+{
+    key_node key_array[8];        
+}key_node_array;*/
 
 typedef struct
 {
@@ -72,12 +77,12 @@ bool Insert(KV_T key, KV_T value)
         memset(root, 0, sizeof(key_node));
         root->kv_list = (kv_list*)malloc(sizeof(kv_list));
         memset(root->kv_list, 0, sizeof(kv_list));
-        maxarr[0] = key;
-        child_node = NULL;
-        data_node_addr->kv_data[0][0].key = key;
-        data_node_addr->kv_data[0][0].value = value;
-        bf = 0;
-        exist = true;
+        root->maxarr[0] = key;
+        root->child_node_array = NULL;
+        root->data_node_addr->kv_data[0][0].key = key;
+        root->data_node_addr->kv_data[0][0].value = value;
+        root->bf = 0;
+        root->exist = true;
         return true;
     }
     else
@@ -159,7 +164,74 @@ KV_T Findmax(key_node* tnode, char count)
     }
 }
 
-key_node* FindMax(key_node* tnode)
+void BalanceTree(key_node* tnode)
+{
+    int minheght
+    
+}
+
+
+int Balancefactor(key_node* tnode)
+{
+    int height[8];
+    memset(height,0,sizeof(height));
+    int count;
+    for(count = 0; count < 8; count++){
+    while(tnode->child_node_array[count].maxarr[0] != 0)
+    {
+        height[count]++;
+        if(tnode->child_node_array[count]->maxarr[1] || tnode->child_node_array[count]->maxarr[2])
+        {
+            h0++;
+            if(tnode->child_node_array[count]->maxarr[3] || tnode->child_node_array[count]->maxarr[4] || tnode->child_node_array[count]->maxarr[5] || tnode->child_node_array[count]->maxarr[6])
+            {
+                h0++;
+                tnode = tnode->child_node_array[count];
+            }
+            else
+            {
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+    quicksort(height, 0, 7);
+    
+}
+
+void quicksort(int *a, int left, int right)
+{
+    if(left >= right)
+    {
+        return;
+    }
+    int i = left;
+    int j = right;
+    int key = a[left];
+    while(i < j)
+    {
+        while(i < j && key <= a[j])
+        {
+            j--;
+        }
+        a[i] = a[j];
+        while(i < j && key >= a[i])
+        {
+            i++;
+        }
+        a[j] = a[i];
+    }
+    a[i] = key;
+    quicksort(a, left, i-1)
+    quicksort(a, i+1, right);
+}
+
+
+
+/*key_node* FindMax(key_node* tnode)
 {
     if(tnode != NULL)
     {
@@ -174,7 +246,7 @@ key_node* FindMax(key_node* tnode)
     }
     fprintf(stdout,"FUNCTION %s : error!\n",__func__);
     return NULL;
-}
+}*/
 
 /*KV_T FindMinKey(key_node* tnode)
 {
