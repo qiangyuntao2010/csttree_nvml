@@ -1,7 +1,7 @@
 /*************************************************************************
 	> File Name: csttree.h
-	> Author: 
-	> Mail: 
+	> Author: QYT
+	> Mail: ytqiang@dsclab.sn.ac.kr
 	> Created Time: Wed 20 Sep 2017 01:55:14 PM KST
  ************************************************************************/
 
@@ -13,58 +13,369 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
+#include <libpmem.h>
 
-#define ROWS 7
-#define LISTS 4
-#define LEVL_NODE_NUM_MAX
-#define KV_T 
-#define NODE_KV_NUM
-#define MAXARR_KEY_NUM 7 
+#define DEBUG
+
+/* pmem file address */
+#define PATH "/home/qyt/csttree_nvml/cst_data"
+
+/* pmem length */
+#define PMEM_LEN (1 << 31)
+
+/* decide the key node level and the node size and the intial level number is zero*/
+#define KEY_LEVEL 0x02 
+
+/* decide data node size */ 
+#define LISTS 0x04
+
+/* key and value type is the same */
+#define KV_T uint64_t
+
+/* initialized pmem node number */
+#define NODE_NUM (1 << 20)
+
+/* one single key node size */
+#define KEY_NODE_SIZE sizeof(_key_node)
+
+/* one single data node size */
+#define DATA_NODE_SIZE sizeof(_data_node)
+
+/* one key-data node pair size */
+#define KEY_DATA_SIZE sizeof(sin_node_pair)
+
+/* one key-data array size */
+#define NODE_ARRAY_SZIE sizeof(node_arry)
+
+#define PRINT()\
+        printf("THE FUNCTION IS %s at the line %d \n",__func__, __LINE__);
 
 namespace stx{
 
 typedef struct
 {
-
-}dm_meta;
-
-typedef struct
-{
-
-}pm_meta;
-
-typedef struct
-{
-    KV_T key;
-    KV_T value;
+    KV_T _key;
+    KV_T _value;
 }kv_pair;
 
 typedef struct
 {
-    KV_T maxarr[MAXARR_KEY_NUM];
-    key_node* child_node_array[8];
-    kv_list* data_node_addr;//double dimensional array with structure or something...
-    int bf;
-    bool exist;
-}key_node;
-
-/*typedef struct
-{
-    key_node key_array[8];        
-}key_node_array;*/
+   char* node_arry_addr; 
+   bool is_empty;
+}pm_meta;
 
 typedef struct
 {
-    kv_pair kv_data[ROWS][LISTS];
-}kv_list;
- 
-class csttree
+    kv_pair kv_data[KEY_NUM][LISTS];
+}_data_node;
+
+typedef struct
 {
-public:
+    KV_T maxarr[MAXARR_KEY_NUM];
+    node_arry* child_node_array;
+}_key_node;
+
+typedef struct
+{
+    _key_node key_node;
+    _data_node data_node;
+}sin_node_pair;
     
-keycompare(KV_T key1, KV_T key2)
+typedef structure
 {
-    return key1 < key2 ? -1 : key1 == key2 ? 0 : 1;
+    sin_node_pair node_org[KEY_NUM<<1];
+}node_array;
+
+class cst_tree
+{
+
+private:
+
+uint8_t KEY_NUM;
+
+node_arry* root;
+
+//pm_meta nvm_meta_root;
+
+pm_meta nvm_meta[NODE_NUM];
+
+uint32_t node_id;
+
+public:
+
+cst_tree()
+{
+    uint8_t count;
+    for(count = 0; count <= KEY_LEVEL; key++)
+    {
+        KEY_NUM += (1 << count);
+    }
+}
+
+~cst_tree();
+
+inline int8_t keycompare(KV_T key1, KV_T key2)
+{
+    return (key1) < (key2) ? (0xff) : (key1) == (key2) ? (0x00) : (0x01);
+}
+
+char* Init_pm()
+{
+    int8_t is_pmem;
+    uint32_t mapped_len;
+    char* node_pool;
+    uint32_t node_id;
+
+    if(char* pmem_addr = (char*)(pmem_map_file(PATH, PMEM_LEN, PMEM_FILE_CREATE, 0666, &mapped_len, &is_pmem)) == NULL)
+    {
+        perror("pmem initialize false!");
+        exit(1);
+    }
+/
+    root_node = pmem_addr + sizeof(pm_meta) * NODE_NUM;
+
+    node_pool = root_node + NODE_ARRAY_SZIE * NODE_NUM;
+
+    for(node_id = 0; node_id < NODE_NUM; node_id++)
+    {
+        nvm_meta[node_id].node_array_addr = node_pool + (NODE_ARRAY_SZIE * node_id);
+        nvm_meta[node_id].is_empty = true;
+    }
+    return node_pool;    
+
+}
+
+bool Insert(KV_T key, KV_T value)
+{
+    if(root == NULL)
+    {
+        root = nvmalloc();
+        root->node_org[0].key_node.maxarr[0] = key;
+        root->node_org[0].data_node.kv_data[0][LISTS - 1]._key = key;
+        root->node_org[0].data_node.kv_data[0][LISTS - 1]._value = value;
+        root->node_org[0].key_node.child_node_array = NULL;
+        pmem_persist(root, KEY_NODE_SIZE);
+        printf("root insert!\n");
+        return true;
+    }
+    else
+    {
+        node_array* tempnode = root;
+        bool ret = _insert(tempnode, key, value);
+        printf("the ret value %d \n", ret);
+        return ret;
+    }
+}
+
+bool _insert(node_array* pnode, KV_T key, KV_T value)
+{
+    uint32_t count_inter = 0;//p
+    KV_T tempkey, tempvalue;
+    while(count_inter <= KEY_NUM)
+    {
+        uint32_t data_count;
+        if(pnode->node_org[0].key_node.maxarr[count_inter] == key)
+        {
+            if(pnode->node_org[0].data_node.kv_data[count_inter][LISTS-1]._value == value)
+            {
+                printf("repeat key value pair\n");
+                return true;
+            }
+            else
+            {
+                for(data_count = 0; count < LISTS; data_count++)
+                {
+                    if(pnode->node_org[0].data_node.kv_data[count_inter][data_count]._key != 0)
+                    {
+                        data_count++;
+                    }
+                }
+                if(data_count < LISTS)
+                {
+                    while(data_count != 0)
+                    {
+                        pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count - 1]._key = pnode->node_org[0].data_node.kv_data[conut_inter][LISTS - data_count]._key;
+                        pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count - 1]._value = pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count]._value;
+                        data_count--;
+                    }
+                    pnode->node_org[0].data_node.kv_data[count_inter][LISTS - 1]._value = value;
+                    pmem_persist(&pnode->node_org[0].data_node.kv_data[count_inter][0], LISTS * sizeof(kv_pair));//persistent
+                    #if DEBUG
+                    PRINT()
+                    #endif
+                    return true;
+                }
+                else if(data_count == LISTS)
+                {
+                    tempkey = pnode->node_org[0].data_node.kv_data[count_inter][0]._key;                 
+                    tempvalue = pnode->node_org[0].data_node.kv_data[count_inter][0]._value;
+                    while(data_count != 0)
+                    {
+                        pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count]._key = pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count + 1]._key;
+                        pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count]._value = pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count + 1]._value;
+                        data_count--;
+                    }
+                    pnode->node_org[0].data_node.kv_data[inter_count][LISTS - 1]._value = value;
+                    key = tempkey;
+                    value = tempvalue;
+                    pmem_persist(&pnode->node_org[0].data_node.kv_data[count_inter][0], LISTS * sizeof(kv_pair));//persistent
+                    count_inter = (count_inter << 1) + 1;
+                }
+                else
+                {
+                    #if DEBUG
+                    PRINT()
+                    #endif
+                    printf(" data number overflow\n");
+                    return false;
+                }
+            }
+        }
+        else if(pnode->node_org[0].key_node.maxarr[count_inter] > key)
+        {
+            if(pnode->node_org[0].key_node.maxarr[(count_inter<<1) + 1] < key)
+            {
+                for(data_count = 0; data_count < LISTS; data_count++)
+                {
+                    if(pnode->node_org[0].data_node.kv_data[count_inter][data_count]._key != 0)
+                    {
+                        data_count++;
+                    }
+                }
+                uint32_t l = 0;    
+                uint32_t r = data_count - 2;
+                while(l < r)
+                {
+                    uint32_t d = (l + r) / 2;
+                    KV_T itemkey = pnode->node_org[0].data_node.kv_data[inter_count][d]._key;
+                    int8_t ndiff = keycompare(key, itemkey);
+                    if(ndiff == 0)
+                    {
+                        break;
+                    }
+                    else if(ndiff < 0)
+                    {
+                        r = d;
+                    }
+                    else 
+                    {
+                        l = d + 1;
+                    }
+                }
+                if(data_count != LISTS)
+                {
+                    int i = data_count;
+                    for(; i < r; i--)
+                    {
+                        
+                    }
+                    while(data_count != 1)
+                    {
+                        pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count - 1]._key = pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count]._key; 
+                        pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count - 1]._value = pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count]._value; 
+                        data_count--;
+                    }
+                    pnode->node_org[0].data_node.kv_data[inter_count][LISTS -]
+                        tempkey = pnode->node_org[0].data_node.kv_data[inter_count][0]._key;
+                        tempvalue = pnode->node_org[0].data_node.kv_data[inter_count][0]._value;
+                            if(pnode->org[0].data_node.kv_data[inter_count][d]._value == value)
+                            {
+                                #if DEBUG
+                                PRINT()
+                                #endif
+                                printf("repeat key-value pair\n");
+                                return true;
+                            }
+                            uint32_t i = 0;
+                            while(i < d)
+                            {
+                                pnode->node_org[0].data_node.kv_data[inter_count][i]._key = pnode->node_org[0].data_node.kv_data[inter_count][i + 1]._key;
+                                pnode->node_org[0].data_node.kv_data[inter_count][i]._value = pnode->node_org[0].data_node.kv_data[inter_count][i + 1]._value;
+                                i++;
+                            }
+                            pnode->node_org[0].data_node.kv_data[inter_count][d - 1]._key = key;
+                            pnode->node_org[0].data_node.kv_data[inter_count][d - 1]._value = value;
+                            pmem_persist(pnode->node_org[0].data_node.kv_data[inter_count][0], LISTS * sizeof(kv_pair));
+                            key = tempkey;
+                            value = tempvalue;
+                }
+                    
+            }
+        }
+    }
+}
+
+
+
+
+bool Find_pmem(KV_T key)
+{
+    node_array* curr_node;
+  /*  uint32_t i = 0;
+    uint32_t node_num = 0;
+    uint8_t node_array_num = 0;
+    pm_meta* curr_meta;
+    curr_meta = &nvm_meta[0];
+    char* curr_pm_knode = curr_meta->pkey_node_org_addr + sizeof(key_node) * node_num;
+    KV_T com_key = 0;
+    while(curr_meta->pkey_node_addr != NULL)
+    {
+        com_key = ((KV_T*)(curr_pm_knode))[i];
+        if(com_key == 0)
+        {
+            printf("have not found the key-value \n");
+            return false;
+        }
+        else
+        {
+            if(i <= TRAN_BOUND){
+                if(key <= com_key)
+                {
+                    com_key = ((KV_T*)(curr_pm_knode))[2i+1];
+                    if(key > com_key)
+                    {
+                        return data_node_find(curr_pm_dnode, i, key);
+                    }
+                    else
+                    {
+                        i = 2i+1;
+                    }
+                }
+                else
+                {
+                    i = 2i+2;
+                }
+            else
+            {
+                if((key <= com_key)&&(key >= ((KV_T*)(curr_pm_dnode))[i][0][0]))
+                {
+                    return data_node_find(curr_pm_dnode, i, key);
+                }
+                else if(key < ((KV_T*)(curr_pm_dnode))[i][0][0])
+                {
+                    curr_meta = (pm_meta*)()
+                }
+
+            }
+        }
+
+
+    }
+}
+
+bool data_node_find(char* data_add, uint32_t row_num, KV_T key)
+{
+    uint32_t count = 0;
+    for(; count < LISTS; count++)
+    {
+        if(key == ((KV_T*)(data_add))[count][LISTS][0]
+        {
+            return true;
+        }
+    }
+    printf("have not find the key-value\n");
+    return false;
 }
 
 
@@ -91,11 +402,6 @@ bool Insert(KV_T key, KV_T value)
         bool ret = _insert(key, value, tnode);
         return ret;
     }
-}
-
-char array_find(char index)
-{
-    
 }
 
 bool _insert(KV_T key, KV_T value, key_node* tnode)
@@ -375,6 +681,8 @@ KV_T Find(KV_T key);
     fprintf(stdout,"FUNCTION %s : Did not find the key-value\n");
     return -1;
 }
+
+
 
 int BalanceTree(key_node* tnode)
 {
