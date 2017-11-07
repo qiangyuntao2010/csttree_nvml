@@ -15,6 +15,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <libpmem.h>
+#include <malloc.h>
+#include <libvmalloc.h>
 
 #define DEBUG
 
@@ -150,7 +152,8 @@ bool Insert(KV_T key, KV_T value)
 {
     if(root == NULL)
     {
-        root = nvmalloc();
+        root = malloc(sizeof(node_array));
+        pmem_memset_persist(root, 0x00, sizeof(node_array));
         root->node_org[0].key_node.maxarr[0] = key;
         root->node_org[0].data_node.kv_data[0][LISTS - 1]._key = key;
         root->node_org[0].data_node.kv_data[0][LISTS - 1]._value = value;
@@ -162,31 +165,35 @@ bool Insert(KV_T key, KV_T value)
     else
     {
         node_array* tempnode = root;
-        bool ret = _insert(tempnode, key, value);
+        static uint32_t node_offset = 0;
+        bool ret = _insert(tempnode, node_offset, key, value);
         printf("the ret value %d \n", ret);
         return ret;
     }
 }
 
-bool _insert(node_array* pnode, KV_T key, KV_T value)
+bool _insert(node_array* pnode, static uint32_t node_offset, KV_T key, KV_T value)
 {
     uint32_t count_inter = 0;//p
     KV_T tempkey, tempvalue;
     while(count_inter <= KEY_NUM)
     {
         uint32_t data_count;
-        if(pnode->node_org[0].key_node.maxarr[count_inter] == key)
+        uint32_t cir;
+        uint32_t i = 0;
+        if(pnode->node_org[node_offset].key_node.maxarr[count_inter] == key)
         {
-            if(pnode->node_org[0].data_node.kv_data[count_inter][LISTS-1]._value == value)
+            if(pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS-1]._value == value)
             {
                 printf("repeat key value pair\n");
                 return true;
             }
             else
             {
-                for(data_count = 0; count < LISTS; data_count++)
+                data_count = 0;
+                for(cir = 0; cir < LISTS; cir++)
                 {
-                    if(pnode->node_org[0].data_node.kv_data[count_inter][data_count]._key != 0)
+                    if(pnode->node_org[node_offset].data_node.kv_data[count_inter][cir]._key != 0)
                     {
                         data_count++;
                     }
@@ -195,12 +202,12 @@ bool _insert(node_array* pnode, KV_T key, KV_T value)
                 {
                     while(data_count != 0)
                     {
-                        pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count - 1]._key = pnode->node_org[0].data_node.kv_data[conut_inter][LISTS - data_count]._key;
-                        pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count - 1]._value = pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count]._value;
+                        pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - data_count - 1]._key = pnode->node_org[node_offset].data_node.kv_data[conut_inter][LISTS - data_count]._key;
+                        pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - data_count - 1]._value = pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - data_count]._value;
                         data_count--;
                     }
-                    pnode->node_org[0].data_node.kv_data[count_inter][LISTS - 1]._value = value;
-                    pmem_persist(&pnode->node_org[0].data_node.kv_data[count_inter][0], LISTS * sizeof(kv_pair));//persistent
+                    pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - 1]._value = value;
+                    pmem_persist(&pnode->node_org[node_offset].data_node.kv_data[count_inter][0], LISTS * sizeof(kv_pair));//persistent
                     #if DEBUG
                     PRINT()
                     #endif
@@ -208,19 +215,20 @@ bool _insert(node_array* pnode, KV_T key, KV_T value)
                 }
                 else if(data_count == LISTS)
                 {
-                    tempkey = pnode->node_org[0].data_node.kv_data[count_inter][0]._key;                 
-                    tempvalue = pnode->node_org[0].data_node.kv_data[count_inter][0]._value;
+                    tempkey = pnode->node_org[node_offset].data_node.kv_data[count_inter][0]._key;                 
+                    tempvalue = pnode->node_org[node_offset].data_node.kv_data[count_inter][0]._value;
                     while(data_count != 0)
                     {
-                        pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count]._key = pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count + 1]._key;
-                        pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count]._value = pnode->node_org[0].data_node.kv_data[count_inter][LISTS - data_count + 1]._value;
+                        pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - data_count]._key = pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - data_count + 1]._key;
+                        pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - data_count]._value = pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - data_count + 1]._value;
                         data_count--;
                     }
-                    pnode->node_org[0].data_node.kv_data[inter_count][LISTS - 1]._value = value;
+                    pnode->node_org[node_offset].data_node.kv_data[inter_count][LISTS - 1]._value = value;
+                    pmem_persist(&pnode->node_org[node_offset].data_node.kv_data[count_inter][0], LISTS * sizeof(kv_pair));//persistent
                     key = tempkey;
                     value = tempvalue;
-                    pmem_persist(&pnode->node_org[0].data_node.kv_data[count_inter][0], LISTS * sizeof(kv_pair));//persistent
                     count_inter = (count_inter << 1) + 1;
+                    continue;
                 }
                 else
                 {
@@ -232,13 +240,14 @@ bool _insert(node_array* pnode, KV_T key, KV_T value)
                 }
             }
         }
-        else if(pnode->node_org[0].key_node.maxarr[count_inter] > key)
+        else if(pnode->node_org[node_offset].key_node.maxarr[count_inter] > key)
         {
-            if(pnode->node_org[0].key_node.maxarr[(count_inter<<1) + 1] < key)
+            if(pnode->node_org[node_offset].key_node.maxarr[(count_inter<<1) + 1] < key)
             {
-                for(data_count = 0; data_count < LISTS; data_count++)
+                data_count = 0;
+                for(cir = 0; cir < LISTS; cir++)
                 {
-                    if(pnode->node_org[0].data_node.kv_data[count_inter][data_count]._key != 0)
+                    if(pnode->node_org[node_offset].data_node.kv_data[count_inter][cir]._key != 0)
                     {
                         data_count++;
                     }
@@ -248,7 +257,7 @@ bool _insert(node_array* pnode, KV_T key, KV_T value)
                 while(l < r)
                 {
                     uint32_t d = (l + r) / 2;
-                    KV_T itemkey = pnode->node_org[0].data_node.kv_data[inter_count][d]._key;
+                    KV_T itemkey = pnode->node_org[node_offset].data_node.kv_data[inter_count][d]._key;
                     int8_t ndiff = keycompare(key, itemkey);
                     if(ndiff == 0)
                     {
@@ -265,15 +274,14 @@ bool _insert(node_array* pnode, KV_T key, KV_T value)
                 }
                 if(data_count < LISTS)
                 {
-                    uint32_t i = 0;
-                    for(; i < r; i++)
+                    for(i = 0; i < r; i++)
                     {
-                        pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count + i - 1]._key = pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count + i]._key;
-                        pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count + i - 1]._value = pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count + i]._value;
+                        pnode->node_org[node_offset].data_node.kv_data[inter_count][LISTS - data_count + i - 1]._key = pnode->node_org[node_offset].data_node.kv_data[inter_count][LISTS - data_count + i]._key;
+                        pnode->node_org[node_offset].data_node.kv_data[inter_count][LISTS - data_count + i - 1]._value = pnode->node_org[node_offset].data_node.kv_data[inter_count][LISTS - data_count + i]._value;
                     }
-                    pnode->node_org[0].data_node.kv_data[inter_count][r - 1]._key = key;
-                    pnode->node_org[0].data_node.kv_data[inter_count][r - 1]._value = value;
-                    pmem_persist(&pnode->org[0].data_node.kv_data[inter_count][0], LISTS * sizeof(kv_pair));
+                    pnode->node_org[node_offset].data_node.kv_data[inter_count][r - 1]._key = key;
+                    pnode->node_org[node_offset].data_node.kv_data[inter_count][r - 1]._value = value;
+                    pmem_persist(&pnode->org[node_offset].data_node.kv_data[inter_count][0], LISTS * sizeof(kv_pair));
                     #if DEBUG
                     PRINT()
                     #endif
@@ -281,90 +289,111 @@ bool _insert(node_array* pnode, KV_T key, KV_T value)
                 }
                 else if(data_count == LISTS)
                 {
-                    tempkey = pnode->node_org[0].data_node.kv_data[inter_count][0]._key;
-                    tempvalue = pnode->node_org[0].data_node.kv_data[inter_count][0]._value;
-                    uint32_t i = 0;
+                    tempkey = pnode->node_org[node_offset].data_node.kv_data[inter_count][0]._key;
+                    tempvalue = pnode->node_org[node_offset].data_node.kv_data[inter_count][0]._value;
                     for(; i< r; i++)
                     {
-                        pnode->node_org[0].data_node.kv_data.kv_data[inter_count][i]._key = pnode->node_org[0].data_node.kv_data.[inter_count][i + 1]._key;
-                        pnode->node_org[0].data_node.kv_data.kv_data[inter_count][i]._value = pnode->node_org[0].data_node.kv_data.[inter_count][i + 1]._value;
+                        pnode->node_org[node_offset].data_node.kv_data.kv_data[inter_count][i]._key = pnode->node_org[node_offset].data_node.kv_data.[inter_count][i + 1]._key;
+                        pnode->node_org[node_offset].data_node.kv_data.kv_data[inter_count][i]._value = pnode->node_org[node_offset].data_node.kv_data.[inter_count][i + 1]._value;
                     }
-                    pnode->node_org[0].data_node.kv_data[inter_count][r - 1]._key = key;
-                    pnode->node_org[0].data_node.kv_data[inter_count][r - 1]._value = value;
-                    pmem_persist(&pnode->node_org[0].data_node.kv_data[inter_count][0], LISTS * sizeof(kv_pair));
+                    pnode->node_org[node_offset].data_node.kv_data[inter_count][r - 1]._key = key;
+                    pnode->node_org[node_offset].data_node.kv_data[inter_count][r - 1]._value = value;
+                    pmem_persist(&pnode->node_org[node_offset].data_node.kv_data[inter_count][0], LISTS * sizeof(kv_pair));
                     inter_count = (inter_count<<1) + 1;
                     key = tempkey;
                     value = tempvalue;
+                    continue;
                 }
             }
-            else if(pnode->node_org[0].key_node.maxarr[(count_inter<<1) + 1] >= key)
+            else if(pnode->node_org[node_offset].key_node.maxarr[(count_inter<<1) + 1] >= key)
             {
                 count_inter = (count_inter<<1) + 1;
+                continue;
             }
         }
-        else if(pnode->node_org[0].key_node.maxarr[count_inter] < key)
+        else if(pnode->node_org[node_offset].key_node.maxarr[count_inter] < key)
         {
+            data_count = 0;
+            for(cir = 0; cir < LISTS; cir++)
+            {
+                if(pnode->node_org[node_offset].data_node.kv_data[count_inter][cir]._key != 0)
+                {
+                    data_count++;
+                }
+            }
+            if(data_count < LISTS)
+            {
+                for(i = 0; i < data_count; i++)
+                {
+                    pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - data_count - 1 + i]._key = pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - data_count + i]._key;
+                    pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - data_count - 1 + i]._value = pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - data_count + i]._value;
+                }
+                pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - 1]._key = key;
+                pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - 1]._value = value;
+                pnode->node_org[node_offset].key_node.maxarr[count_inter] = key;
+                pmem_persist(&pnode->node_org[node_offset].data_node.kv_data[count_inter][0], LISTS * sizeof(KV_T));
+                pmem_persist(&pnode->node_org[node_offset].key_node.maxarr[0], sizeof(_key_node));//flush size
+                return true;
+            }
+
             count_inter = (count_inter<<1) + 2;
+            continue;
         }
     }
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    while(data_count != 1)
-                    {
-                        pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count - 1]._key = pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count]._key; 
-                        pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count - 1]._value = pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count]._value; 
-                        data_count--;
-                    }
-                    pnode->node_org[0].data_node.kv_data[inter_count][LISTS -]
-                        tempkey = pnode->node_org[0].data_node.kv_data[inter_count][0]._key;
-                        tempvalue = pnode->node_org[0].data_node.kv_data[inter_count][0]._value;
-                            if(pnode->org[0].data_node.kv_data[inter_count][d]._value == value)
-                            {
-                                #if DEBUG
-                                PRINT()
-                                #endif
-                                printf("repeat key-value pair\n");
-                                return true;
-                            }
-                            uint32_t i = 0;
-                            while(i < d)
-                            {
-                                pnode->node_org[0].data_node.kv_data[inter_count][i]._key = pnode->node_org[0].data_node.kv_data[inter_count][i + 1]._key;
-                                pnode->node_org[0].data_node.kv_data[inter_count][i]._value = pnode->node_org[0].data_node.kv_data[inter_count][i + 1]._value;
-                                i++;
-                            }
-                            pnode->node_org[0].data_node.kv_data[inter_count][d - 1]._key = key;
-                            pnode->node_org[0].data_node.kv_data[inter_count][d - 1]._value = value;
-                            pmem_persist(pnode->node_org[0].data_node.kv_data[inter_count][0], LISTS * sizeof(kv_pair));
-                            key = tempkey;
-                            value = tempvalue;
-                }
-                    
-            }
+    if(count_inter > KEY_NUM)
+    {
+        if(pnode->node_org[node_offset].key_node->child_node_array == NULL) 
+        {
+            pnode->node_org[node_offset].key_node.child_node_array = (node_array*)malloc(sizeof(node_array));
+            pmem_memset_persist(pnode->node_org[node_offset].key_node.child_node_array, 0x00, sizeof(node_array));
         }
+        pnode = pnnode->node_org[node_offset].key_node.child_node_array;
+        node_offset = count_inter - KEY_NUM;
+        _insert(pnode, node_offset, key, value);
     }
 }
 
 
 
 
-bool Find_pmem(KV_T key)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*bool Find_pmem(KV_T key)
 {
     node_array* curr_node;
   /*  uint32_t i = 0;
@@ -656,9 +685,7 @@ KV_T FindMaxKey(key_node* tnode)
         return false;
 
     }
-}*/
-
-
+}
 
 KV_T Find(KV_T key);
 {
