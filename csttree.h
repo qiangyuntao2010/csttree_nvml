@@ -243,8 +243,8 @@ bool _insert(node_array* pnode, KV_T key, KV_T value)
                         data_count++;
                     }
                 }
-                uint32_t l = 0;    
-                uint32_t r = data_count - 2;
+                uint32_t l = LISTS - data_count;
+                uint32_t r = LISTS - 2;
                 while(l < r)
                 {
                     uint32_t d = (l + r) / 2;
@@ -263,13 +263,68 @@ bool _insert(node_array* pnode, KV_T key, KV_T value)
                         l = d + 1;
                     }
                 }
-                if(data_count != LISTS)
+                if(data_count < LISTS)
                 {
-                    int i = data_count;
-                    for(; i < r; i--)
+                    uint32_t i = 0;
+                    for(; i < r; i++)
                     {
-                        
+                        pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count + i - 1]._key = pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count + i]._key;
+                        pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count + i - 1]._value = pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count + i]._value;
                     }
+                    pnode->node_org[0].data_node.kv_data[inter_count][r - 1]._key = key;
+                    pnode->node_org[0].data_node.kv_data[inter_count][r - 1]._value = value;
+                    pmem_persist(&pnode->org[0].data_node.kv_data[inter_count][0], LISTS * sizeof(kv_pair));
+                    #if DEBUG
+                    PRINT()
+                    #endif
+                    return true;
+                }
+                else if(data_count == LISTS)
+                {
+                    tempkey = pnode->node_org[0].data_node.kv_data[inter_count][0]._key;
+                    tempvalue = pnode->node_org[0].data_node.kv_data[inter_count][0]._value;
+                    uint32_t i = 0;
+                    for(; i< r; i++)
+                    {
+                        pnode->node_org[0].data_node.kv_data.kv_data[inter_count][i]._key = pnode->node_org[0].data_node.kv_data.[inter_count][i + 1]._key;
+                        pnode->node_org[0].data_node.kv_data.kv_data[inter_count][i]._value = pnode->node_org[0].data_node.kv_data.[inter_count][i + 1]._value;
+                    }
+                    pnode->node_org[0].data_node.kv_data[inter_count][r - 1]._key = key;
+                    pnode->node_org[0].data_node.kv_data[inter_count][r - 1]._value = value;
+                    pmem_persist(&pnode->node_org[0].data_node.kv_data[inter_count][0], LISTS * sizeof(kv_pair));
+                    inter_count = (inter_count<<1) + 1;
+                    key = tempkey;
+                    value = tempvalue;
+                }
+            }
+            else if(pnode->node_org[0].key_node.maxarr[(count_inter<<1) + 1] >= key)
+            {
+                count_inter = (count_inter<<1) + 1;
+            }
+        }
+        else if(pnode->node_org[0].key_node.maxarr[count_inter] < key)
+        {
+            count_inter = (count_inter<<1) + 2;
+        }
+    }
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                     while(data_count != 1)
                     {
                         pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count - 1]._key = pnode->node_org[0].data_node.kv_data[inter_count][LISTS - data_count]._key; 
