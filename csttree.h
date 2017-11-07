@@ -335,9 +335,11 @@ bool _insert(node_array* pnode, static uint32_t node_offset, KV_T key, KV_T valu
                 pmem_persist(&pnode->node_org[node_offset].key_node.maxarr[0], sizeof(_key_node));//flush size
                 return true;
             }
-
-            count_inter = (count_inter<<1) + 2;
-            continue;
+            else if(data_count = LISTS)
+            {
+                count_inter = (count_inter<<1) + 2;
+                continue;
+            }
         }
     }
     if(count_inter > KEY_NUM)
