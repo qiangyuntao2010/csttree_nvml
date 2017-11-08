@@ -172,6 +172,101 @@ bool Insert(KV_T key, KV_T value)
     }
 }
 
+inline void insertion_sort(uint32_t* unsorted, uint32_t length)
+{
+    for(uint32_t i = 1; i <length; i++ )
+    {
+        int j = i -1;
+        int temp = unsorted[i];
+        while(j > 0 && unsorted[j] > temp)
+        {
+            unsorted[j + 1] = unsorted[j];
+            j--;
+        }
+        if(j != i - 1)
+        {
+            unsorted[j + 1] = temp;
+        }
+    }
+}
+
+
+
+bool Balance_cst_tree(node_array* pnode, static uint32_t offset, uint32_t num_inter)
+{
+    uint32_t i = (2 << KEY_LEVEL);
+    int32_t height[i];
+    memset(height, 0x00, i);
+    uint32_t inter;
+    for(inter = 0; inter < i; inter++)
+    {
+        uint32_t l = 0, r = 0;
+        KV_T* lp, rp;
+        lp = rp = &pnode->node_org[offset].key_node.maxarr[num_inter];
+        while(lp != NULL)
+        {
+            ltmp = (num_inter<<2) + 1;
+            if((pnode->node_org[offset].key_node.maxarr[ltmp] != NULL)&&(ltmp <= KEY_NUM))
+            {
+                l++;
+                lp = pnode->node_org[offset].key_node.maxarr[ltmp];
+            }
+            else if(ltmp > KEY_NUM)
+            {
+                pnode = pnode->node_org[offset].key_node.child_node_array;
+                offset = ltmp - KEY_NUM;
+                ltmp = 0;
+                Balance_cst_tree(pnode, offset, ltmp);
+            }
+        }
+        while(rp != NULL)
+        {
+            rtmp = (num_inter<<2) + 2;
+            if((pnode->node_org[offset].key_node.maxarr[rtmp] != NULL)&&(rtmp <= KEY_NUM))
+            {
+                r++;
+                rp = pnode->node_org[offset].key_node.maxarr[rtmp];
+            }
+            else if(rtmp > KEY_NUM)
+            {
+                pnode = pnode->node_org[offset].key_node.child_node_array;
+                offset = rtmp - KEY_NUM;
+                rtmp = 0;
+                Balance_cst_tree(pnode, offset, rtmp);
+            }
+        }
+        height[i] = (r - l);
+    }
+    uint32_t max, min, max_count, min_count, rotate_count;
+    max = height[0]
+    for(rotate_count = 0; rotate_count < i; rotate_count++)
+    {
+        if(height[rotate_count] > max)
+        {
+            max = height[rotate_count];
+            max_count = rotate_count;
+        }
+    }
+    min = height[0]
+    for(rotate_count = 0; rotate_count < i; rotate_count++)
+    {
+        if(height[rotate_count] > max)
+        {
+            min = height[rotate_count];
+            min_count = rotate_count;
+        }
+    }
+    if((max - min) >= 2)
+    {
+        if(max_count > min_count)
+        {
+            
+        }
+    }
+}
+
+
+
 bool _insert(node_array* pnode, static uint32_t node_offset, KV_T key, KV_T value)
 {
     uint32_t count_inter = 0;//p
@@ -289,6 +384,7 @@ bool _insert(node_array* pnode, static uint32_t node_offset, KV_T key, KV_T valu
                 }
                 else if(data_count == LISTS)
                 {
+                    if()
                     tempkey = pnode->node_org[node_offset].data_node.kv_data[inter_count][0]._key;
                     tempvalue = pnode->node_org[node_offset].data_node.kv_data[inter_count][0]._value;
                     for(; i< r; i++)
@@ -305,7 +401,7 @@ bool _insert(node_array* pnode, static uint32_t node_offset, KV_T key, KV_T valu
                     continue;
                 }
             }
-            else if(pnode->node_org[node_offset].key_node.maxarr[(count_inter<<1) + 1] >= key)
+            else if(pnode->node_org[node_offset].key_node.maxarr[(count_inter<<1) + 1] <= key)
             {
                 count_inter = (count_inter<<1) + 1;
                 continue;
@@ -331,6 +427,7 @@ bool _insert(node_array* pnode, static uint32_t node_offset, KV_T key, KV_T valu
                 pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - 1]._key = key;
                 pnode->node_org[node_offset].data_node.kv_data[count_inter][LISTS - 1]._value = value;
                 pnode->node_org[node_offset].key_node.maxarr[count_inter] = key;
+                Balance_cst_tree(pnode, node_offset, count_inter);
                 pmem_persist(&pnode->node_org[node_offset].data_node.kv_data[count_inter][0], LISTS * sizeof(KV_T));
                 pmem_persist(&pnode->node_org[node_offset].key_node.maxarr[0], sizeof(_key_node));//flush size
                 return true;
@@ -398,7 +495,7 @@ bool _insert(node_array* pnode, static uint32_t node_offset, KV_T key, KV_T valu
 /*bool Find_pmem(KV_T key)
 {
     node_array* curr_node;
-  /*  uint32_t i = 0;
+    uint32_t i = 0;
     uint32_t node_num = 0;
     uint8_t node_array_num = 0;
     pm_meta* curr_meta;
