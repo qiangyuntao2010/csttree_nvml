@@ -86,7 +86,7 @@ typedef struct
     
 typedef structure
 {
-    sin_node_pair node_org[KEY_NUM<<1];
+    sin_node_pair node_org[2 << KEY_LEVEL];
 }node_array;
 
 class cst_tree
@@ -190,33 +190,52 @@ inline void insertion_sort(uint32_t* unsorted, uint32_t length)
     }
 }
 
+uint32_t max(uint32_t a, uint32_t b)
+{
+    if(a < b)
+    {
+        return b;
+    }
+    else if(a >= b)
+    {
+        return a;
+    }
+}
 
 
-bool Balance_cst_tree(node_array* pnode, static uint32_t offset, uint32_t num_inter)
+
+bool Balance_cst_tree(node_array* pnode, static uint32_t offset)
 {
     uint32_t i = (2 << KEY_LEVEL);
-    int32_t height[i];
-    memset(height, 0x00, i);
+    typedef struct
+    {
+        uint32_t height;
+        uint32_t index;
+    }depth;
+    depth depth_org[2 << KEY_LEVEL];
+    memset(depth_org, 0x00, sizeof(depth) * (2 << KEY_LEVEL));
     uint32_t inter;
+    node_array* tmpnode = pnode;
+    pnode = pnode->node_org[offset].key_node.child_node_array;
     for(inter = 0; inter < i; inter++)
     {
         uint32_t l = 0, r = 0;
         KV_T* lp, rp;
-        lp = rp = &pnode->node_org[offset].key_node.maxarr[num_inter];
+        uint32_t num_inter = 0;
+        lp = rp = &pnode->node_org[i].key_node.maxarr[num_inter];
         while(lp != NULL)
         {
             ltmp = (num_inter<<2) + 1;
             if((pnode->node_org[offset].key_node.maxarr[ltmp] != NULL)&&(ltmp <= KEY_NUM))
             {
                 l++;
-                lp = pnode->node_org[offset].key_node.maxarr[ltmp];
+                lp = &pnode->node_org[offset].key_node.maxarr[ltmp];
             }
             else if(ltmp > KEY_NUM)
             {
-                pnode = pnode->node_org[offset].key_node.child_node_array;
+                //pnode = pnode->node_org[offset].key_node.child_node_array;
                 offset = ltmp - KEY_NUM;
-                ltmp = 0;
-                Balance_cst_tree(pnode, offset, ltmp);
+                Balance_cst_tree(pnode, offset);
             }
         }
         while(rp != NULL)
@@ -225,17 +244,17 @@ bool Balance_cst_tree(node_array* pnode, static uint32_t offset, uint32_t num_in
             if((pnode->node_org[offset].key_node.maxarr[rtmp] != NULL)&&(rtmp <= KEY_NUM))
             {
                 r++;
-                rp = pnode->node_org[offset].key_node.maxarr[rtmp];
+                rp = &pnode->node_org[offset].key_node.maxarr[rtmp];
             }
             else if(rtmp > KEY_NUM)
             {
-                pnode = pnode->node_org[offset].key_node.child_node_array;
+                //pnode = pnode->node_org[offset].key_node.child_node_array;
                 offset = rtmp - KEY_NUM;
-                rtmp = 0;
                 Balance_cst_tree(pnode, offset, rtmp);
             }
         }
-        height[i] = (r - l);
+        depth_org[i].depth = ;
+        depth_org[i].index = 
     }
     uint32_t max, min, max_count, min_count, rotate_count;
     max = height[0]
@@ -260,7 +279,23 @@ bool Balance_cst_tree(node_array* pnode, static uint32_t offset, uint32_t num_in
     {
         if(max_count > min_count)
         {
-            
+            uint32_t counter;
+            if((max_count - min_count) != 1)
+            {
+                uint32_t from = min_count;
+                uint32_t to = max_count - 1;
+                for(counter = from; i < to; i++)
+                {
+                    ij_rotation(pnode, offset);
+                }
+            }
+            if(max_count != (2 << KEY_LEVEL)
+            {
+                for(counter = max_count; counter < (2 << KEY_LEVEL); counter++)
+                {
+                    ij_rotation()
+                }
+            }
         }
     }
 }
