@@ -202,6 +202,18 @@ uint32_t max(uint32_t a, uint32_t b)
     }
 }
 
+uint32_t height(node_array* pnode, static uint32_t offset)
+{
+    if(pnode->node_org[offset].key_node.maxarr[0] == 0)
+    {
+        return 0;
+    }
+    else
+    {
+
+    }
+}
+
 
 
 bool Balance_cst_tree(node_array* pnode, static uint32_t offset)
@@ -221,58 +233,62 @@ bool Balance_cst_tree(node_array* pnode, static uint32_t offset)
     {
         uint32_t l = 0, r = 0;
         KV_T* lp, rp;
+        lp = rp = pnode->node_org[inter];
         uint32_t num_inter = 0;
-        lp = rp = &pnode->node_org[i].key_node.maxarr[num_inter];
-        while(lp != NULL)
+        while((lp != NULL) || (rp != NULL))
         {
-            ltmp = (num_inter<<2) + 1;
-            if((pnode->node_org[offset].key_node.maxarr[ltmp] != NULL)&&(ltmp <= KEY_NUM))
+
+            if(lp != NULL)
             {
-                l++;
-                lp = &pnode->node_org[offset].key_node.maxarr[ltmp];
+                ltmp = (num_inter<<2) + 1;
+                if((pnode->node_org[offset].key_node.maxarr[ltmp] != NULL)&&(ltmp <= KEY_NUM))
+                {
+                    l++;
+                    lp = &pnode->node_org[offset].key_node.maxarr[ltmp];
+                }
+                else if(ltmp > KEY_NUM)
+                {
+                    //pnode = pnode->node_org[offset].key_node.child_node_array;
+                    offset = ltmp - KEY_NUM;
+                    Balance_cst_tree(pnode, offset);
+                }
             }
-            else if(ltmp > KEY_NUM)
+            if(rp != NULL)
             {
-                //pnode = pnode->node_org[offset].key_node.child_node_array;
-                offset = ltmp - KEY_NUM;
-                Balance_cst_tree(pnode, offset);
+                rtmp = (num_inter<<2) + 2;
+                if((pnode->node_org[offset].key_node.maxarr[rtmp] != NULL)&&(rtmp <= KEY_NUM))
+                {
+                    r++;
+                    rp = &pnode->node_org[offset].key_node.maxarr[rtmp];
+                }
+                else if(rtmp > KEY_NUM)
+                {
+                    //pnode = pnode->node_org[offset].key_node.child_node_array;
+                    offset = rtmp - KEY_NUM;
+                    Balance_cst_tree(pnode, offset);
+                }
             }
         }
-        while(rp != NULL)
-        {
-            rtmp = (num_inter<<2) + 2;
-            if((pnode->node_org[offset].key_node.maxarr[rtmp] != NULL)&&(rtmp <= KEY_NUM))
-            {
-                r++;
-                rp = &pnode->node_org[offset].key_node.maxarr[rtmp];
-            }
-            else if(rtmp > KEY_NUM)
-            {
-                //pnode = pnode->node_org[offset].key_node.child_node_array;
-                offset = rtmp - KEY_NUM;
-                Balance_cst_tree(pnode, offset, rtmp);
-            }
-        }
-        depth_org[i].depth = ;
-        depth_org[i].index = 
+        depth_org[inter].depth = max(r, l);
+        depth_org[inter].index = inter; 
     }
     uint32_t max, min, max_count, min_count, rotate_count;
     max = height[0]
     for(rotate_count = 0; rotate_count < i; rotate_count++)
     {
-        if(height[rotate_count] > max)
+        if(depth_org[rotate_count].depth > max)
         {
-            max = height[rotate_count];
-            max_count = rotate_count;
+            max = height[rotate_count].depth;
+            max_count = depth_org[rotate_count].index;
         }
     }
     min = height[0]
     for(rotate_count = 0; rotate_count < i; rotate_count++)
     {
-        if(height[rotate_count] > max)
+        if(depth_org[rotate_count].depth > max)
         {
-            min = height[rotate_count];
-            min_count = rotate_count;
+            min = depth_org[rotate_count].depth;
+            min_count = depth_org[rotate_count].index;
         }
     }
     if((max - min) >= 2)
@@ -293,11 +309,18 @@ bool Balance_cst_tree(node_array* pnode, static uint32_t offset)
             {
                 for(counter = max_count; counter < (2 << KEY_LEVEL); counter++)
                 {
-                    ij_rotation()
+                    ij_rotation(tmpnode, counter, counter + 1);
                 }
             }
+               ij_rotation(tmpnode, max_count, min_count);
+        }
+        else
+        {
+            //rotation to right                 
         }
     }
+    if(tmp->parent is not null)//?
+    cst_balace();
 }
 
 
