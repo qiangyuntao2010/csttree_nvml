@@ -248,7 +248,6 @@ bool Balance_cst_tree(node_array* pnode, static uint32_t offset)
                 }
                 else if(ltmp > KEY_NUM)
                 {
-                    //pnode = pnode->node_org[offset].key_node.child_node_array;
                     offset = ltmp - KEY_NUM;
                     Balance_cst_tree(pnode, offset);
                 }
@@ -263,13 +262,12 @@ bool Balance_cst_tree(node_array* pnode, static uint32_t offset)
                 }
                 else if(rtmp > KEY_NUM)
                 {
-                    //pnode = pnode->node_org[offset].key_node.child_node_array;
                     offset = rtmp - KEY_NUM;
                     Balance_cst_tree(pnode, offset);
                 }
             }
         }
-        depth_org[inter].depth = max(r, l);
+        depth_org[inter].depth = 1 + max(r, l);
         depth_org[inter].index = inter; 
     }
     uint32_t max, min, max_count, min_count, rotate_count;
@@ -312,7 +310,7 @@ bool Balance_cst_tree(node_array* pnode, static uint32_t offset)
                     ij_rotation(tmpnode, counter, counter + 1);
                 }
             }
-               ij_rotation(tmpnode, max_count, min_count);
+            ij_rotation(tmpnode, max_count, min_count);
         }
         else
         {
@@ -321,6 +319,15 @@ bool Balance_cst_tree(node_array* pnode, static uint32_t offset)
     }
     if(tmp->parent is not null)//?
     cst_balace();
+}
+
+
+void ij_rotation(node_array* pnode, static uint32_t offset, uint32_t i, uint32_t j)
+{
+    sin_node_pair* tmp_sinnode = malloc(sizeof(sin_node_pair));
+    node_array* child_node = pnode->node_org[offset].key_node.child_node_array;
+    memcpy(tmp_sinnode, child_node->node_org[j], sizeof(sin_node_pair));
+    memcpy(child_node->node_org[j], child_node->node_org[i], sizeof(sin_node_pair));
 }
 
 
