@@ -216,7 +216,7 @@ uint32_t height(node_array* pnode, static uint32_t offset)
 
 
 
-bool Balance_cst_tree(node_array* pnode, static uint32_t offset)
+bool Balance_cst_tree(node_array* pnode, uint32_t offset)
 {
     uint32_t i = (2 << KEY_LEVEL);
     typedef struct
@@ -233,14 +233,39 @@ bool Balance_cst_tree(node_array* pnode, static uint32_t offset)
     {
         uint32_t l = 0, r = 0;
         KV_T* lp, rp;
-        lp = rp = pnode->node_org[inter];
+        lp = rp = pnode->node_org[inter].key_node.maxarr[0];
         uint32_t num_inter = 0;
+
+        uint32_t tree_depth(node_array* pnode, uint32_t offset, uint32_t inter_node)
+        {
+            uint32_t bound = (2<<KEY_LEVEL);
+            uint32_t rightdepth = 0;
+            uint32_t leftdepth = 0;
+            if(pnode->node_org[offset] == NULL)
+            {
+                return -1;
+            }
+            if((pnode->node_org[offset].key_node.maxarr[inter_node])&&(inter_node <= KEY_NUM))
+            {
+                leftdepth = tree_depth(pnode, offset, (2<<inter_node));
+            }
+            if(inter_node > KEY_NUM)
+            {
+                pnode = pnode->node_org[offset].key_node.child_node_array;
+                offset = inter_count - KEY_NUM;
+                leftdepth = tree_depth(pnode, offset, 0);
+            }
+            if(pnode->node_org[offset].key_node.maxarr[inter_node])
+        }
+
+
+
         while((lp != NULL) || (rp != NULL))
         {
 
             if(lp != NULL)
             {
-                ltmp = (num_inter<<2) + 1;
+                uint32_t ltmp = (num_inter<<2) + 1;
                 if((pnode->node_org[offset].key_node.maxarr[ltmp] != NULL)&&(ltmp <= KEY_NUM))
                 {
                     l++;
@@ -254,7 +279,7 @@ bool Balance_cst_tree(node_array* pnode, static uint32_t offset)
             }
             if(rp != NULL)
             {
-                rtmp = (num_inter<<2) + 2;
+                uint32_t rtmp = (num_inter<<2) + 2;
                 if((pnode->node_org[offset].key_node.maxarr[rtmp] != NULL)&&(rtmp <= KEY_NUM))
                 {
                     r++;
