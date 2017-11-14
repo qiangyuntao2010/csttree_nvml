@@ -202,102 +202,73 @@ uint32_t max(uint32_t a, uint32_t b)
     }
 }
 
-uint32_t height(node_array* pnode, static uint32_t offset)
+uint32_t odd_even(uint32_t num)
 {
-    if(pnode->node_org[offset].key_node.maxarr[0] == 0)
+    if((num % 2) == 0)
     {
-        return 0;
+        return ((num - 1 + KEY_NUM) / 2);
     }
     else
     {
-
+        return ((num - 2 + KEY_NUM) / 2);
     }
 }
 
-
+uint32_t tree_depth(node_array* pnode, uint32_t offset, uint32_t inter_node)
+{
+    uint32_t rightdepth = 0;
+    uint32_t leftdepth = 0;
+    if(pnode->node_org[offset].key_node.maxarr[inter_node] == NULL)
+    {
+        return -1;
+    }
+    if((pnode->node_org[offset].key_node.maxarr[(2<<inter_node) + 1])&&((2<<inter_node) + 1 <= KEY_NUM))
+    {
+        leftdepth = tree_depth(pnode, offset, (2<<inter_node) + 1);
+    }
+    if(!(pnode->node_org[offset].key_node.maxarr[(2<<inter_node) + 1])&&((2<<inter_node) + 1 <= KEY_NUM))
+    {
+        leftdepth = -1;
+    }
+    if(pnode->node_org[offset].key_node.maxarr[(2<<inter_node) + 2]&&((2<<inter_node) + 2 <= KEY_NUM))
+    {
+        rightdepth = tree_depth(pnode, offset, (2<<inter_node) + 2);
+    }
+    if(!(pnode->node_org[offset].key_node.maxarr[(2<<inter_node) + 2])&&((2<<inter_node) + 2 <= KEY_NUM))
+    {
+        rightdepth = -1;
+    }
+    if(inter_node > KEY_NUM)
+    {
+        pnode = pnode->node_org[offset].key_node.child_node_array;
+        offset = inter_count - KEY_NUM;
+        leftdepth = rightdepth = tree_depth(pnode, offset, 0);
+    }
+    return rightdepth > leftdepth ? rightdepth + 1 : leftdepth + 1;
+}
 
 bool Balance_cst_tree(node_array* pnode, uint32_t offset)
 {
-    uint32_t i = (2 << KEY_LEVEL);
+    uint32_t bound = (2 << KEY_LEVEL + 1);
     typedef struct
     {
         uint32_t height;
         uint32_t index;
     }depth;
-    depth depth_org[2 << KEY_LEVEL];
-    memset(depth_org, 0x00, sizeof(depth) * (2 << KEY_LEVEL));
+    depth depth_org[bound];
+    memset(depth_org, 0x00, sizeof(depth) * bound);
     uint32_t inter;
     node_array* tmpnode = pnode;
     pnode = pnode->node_org[offset].key_node.child_node_array;
-    for(inter = 0; inter < i; inter++)
+    for(inter = 0; inter < bound; inter++)
     {
-        uint32_t l = 0, r = 0;
-        KV_T* lp, rp;
-        lp = rp = pnode->node_org[inter].key_node.maxarr[0];
-        uint32_t num_inter = 0;
-
-        uint32_t tree_depth(node_array* pnode, uint32_t offset, uint32_t inter_node)
-        {
-            uint32_t bound = (2<<KEY_LEVEL);
-            uint32_t rightdepth = 0;
-            uint32_t leftdepth = 0;
-            if(pnode->node_org[offset] == NULL)
-            {
-                return -1;
-            }
-            if((pnode->node_org[offset].key_node.maxarr[inter_node])&&(inter_node <= KEY_NUM))
-            {
-                leftdepth = tree_depth(pnode, offset, (2<<inter_node));
-            }
-            if(inter_node > KEY_NUM)
-            {
-                pnode = pnode->node_org[offset].key_node.child_node_array;
-                offset = inter_count - KEY_NUM;
-                leftdepth = tree_depth(pnode, offset, 0);
-            }
-            if(pnode->node_org[offset].key_node.maxarr[inter_node])
-        }
-
-
-
-        while((lp != NULL) || (rp != NULL))
-        {
-
-            if(lp != NULL)
-            {
-                uint32_t ltmp = (num_inter<<2) + 1;
-                if((pnode->node_org[offset].key_node.maxarr[ltmp] != NULL)&&(ltmp <= KEY_NUM))
-                {
-                    l++;
-                    lp = &pnode->node_org[offset].key_node.maxarr[ltmp];
-                }
-                else if(ltmp > KEY_NUM)
-                {
-                    offset = ltmp - KEY_NUM;
-                    Balance_cst_tree(pnode, offset);
-                }
-            }
-            if(rp != NULL)
-            {
-                uint32_t rtmp = (num_inter<<2) + 2;
-                if((pnode->node_org[offset].key_node.maxarr[rtmp] != NULL)&&(rtmp <= KEY_NUM))
-                {
-                    r++;
-                    rp = &pnode->node_org[offset].key_node.maxarr[rtmp];
-                }
-                else if(rtmp > KEY_NUM)
-                {
-                    offset = rtmp - KEY_NUM;
-                    Balance_cst_tree(pnode, offset);
-                }
-            }
-        }
-        depth_org[inter].depth = 1 + max(r, l);
+        depth_org[inter].depth = tree_depth(pnode, inter, 0);
         depth_org[inter].index = inter; 
     }
     uint32_t max, min, max_count, min_count, rotate_count;
-    max = height[0]
-    for(rotate_count = 0; rotate_count < i; rotate_count++)
+    max = depth_org[0].depth;
+    max_count depth_org[0].index;
+    for(rotate_count = 0; rotate_count < bound; rotate_count++)
     {
         if(depth_org[rotate_count].depth > max)
         {
@@ -305,10 +276,11 @@ bool Balance_cst_tree(node_array* pnode, uint32_t offset)
             max_count = depth_org[rotate_count].index;
         }
     }
-    min = height[0]
-    for(rotate_count = 0; rotate_count < i; rotate_count++)
+    min = depth_org[0].depth;
+    min_count = depth_org[0].index;
+    for(rotate_count = 0; rotate_count < bound; rotate_count++)
     {
-        if(depth_org[rotate_count].depth > max)
+        if(depth_org[rotate_count].depth < min)
         {
             min = depth_org[rotate_count].depth;
             min_count = depth_org[rotate_count].index;
@@ -318,21 +290,21 @@ bool Balance_cst_tree(node_array* pnode, uint32_t offset)
     {
         if(max_count > min_count)
         {
-            uint32_t counter;
+            uint32_t counter = 0x00;
             if((max_count - min_count) != 1)
             {
                 uint32_t from = min_count;
                 uint32_t to = max_count - 1;
-                for(counter = from; i < to; i++)
+                for(counter = from; counter < to; counter++)
                 {
-                    ij_rotation(pnode, offset);
+                    ij_rotation(tmpnode, offset, counter, counter + 1);
                 }
             }
-            if(max_count != (2 << KEY_LEVEL)
+            if(max_count != (bound - 1))
             {
-                for(counter = max_count; counter < (2 << KEY_LEVEL); counter++)
+                for(counter = max_count; counter < (bound - 1); counter++)
                 {
-                    ij_rotation(tmpnode, counter, counter + 1);
+                    ij_rotation(pnode, offset, counter, counter + 1);
                 }
             }
             ij_rotation(tmpnode, max_count, min_count);
@@ -347,17 +319,24 @@ bool Balance_cst_tree(node_array* pnode, uint32_t offset)
 }
 
 
-void ij_rotation(node_array* pnode, static uint32_t offset, uint32_t i, uint32_t j)
+void ij_rotation(node_array* pnode, uint32_t offset, uint32_t i, uint32_t j)
 {
     sin_node_pair* tmp_sinnode = malloc(sizeof(sin_node_pair));
     node_array* child_node = pnode->node_org[offset].key_node.child_node_array;
     memcpy(tmp_sinnode, child_node->node_org[j], sizeof(sin_node_pair));
     memcpy(child_node->node_org[j], child_node->node_org[i], sizeof(sin_node_pair));
+    uint32_t tmp_i = odd_even(i);
+    uint32_t tmp_j = odd_even(j);
+    if(tmp_i == tmp_j)
+    {
+        
+    }
+    
 }
 
 
 
-bool _insert(node_array* pnode, static uint32_t node_offset, KV_T key, KV_T value)
+bool _insert(node_array* pnode, uint32_t node_offset, KV_T key, KV_T value)
 {
     uint32_t count_inter = 0;//p
     KV_T tempkey, tempvalue;
