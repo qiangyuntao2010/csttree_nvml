@@ -202,15 +202,27 @@ uint32_t max(uint32_t a, uint32_t b)
     }
 }
 
-uint32_t odd_even(uint32_t num)
+uint32_t exter_odd_even(uint32_t num)
 {
     if((num % 2) == 0)
     {
-        return ((num - 1 + KEY_NUM) / 2);
+        return ((num - 1 + KEY_NUM) >> 1);
     }
     else
     {
-        return ((num - 2 + KEY_NUM) / 2);
+        return ((num - 2 + KEY_NUM) >> 1);
+    }
+}
+
+uint32_t inter_odd_even(uint32_t num)
+{
+    if((num % 2) == 0)
+    {
+        return ((num - 2) >> 1);
+    }
+    else
+    {
+        return ((num - 1) >> 1);
     }
 }
 
@@ -324,13 +336,37 @@ void ij_rotation(node_array* pnode, uint32_t offset, uint32_t i, uint32_t j)
     sin_node_pair* tmp_sinnode = malloc(sizeof(sin_node_pair));
     node_array* child_node = pnode->node_org[offset].key_node.child_node_array;
     memcpy(tmp_sinnode, child_node->node_org[j], sizeof(sin_node_pair));
-    memcpy(child_node->node_org[j], child_node->node_org[i], sizeof(sin_node_pair));
-    uint32_t tmp_i = odd_even(i);
-    uint32_t tmp_j = odd_even(j);
-    if(tmp_i == tmp_j)
+    uint32_t a = 0x00;
+    uint32_t max_num_j = child_node->node_org[i].maxarr[a];
+    while(child_node->node_org[i].maxarr[(a << 1) + 2] != 0)
     {
-        
+        max_num_j child_node->node_org[i].maxarr[(a << 1) + 2];
+        a = (a << 1) + 2;
     }
+    kv_pair tmp_list_i[LISTS];
+    memcpy(tmp_list_i, child_node->node_org[i].data_node.kv_data[a][], sizeof(kv_pair) * LISTS);
+    uint32_t tmp_i = exter_odd_even(i);
+    uint32_t tmp_j = exter_odd_even(j);
+    while(tmp_i != tmp_j)
+    {
+        tmp_i = inter_odd_even(tmp_i);
+        tmp_j = inter_odd_even(tmp_j);
+    }
+    if(tmp_i != tmp_j)
+    {
+        #ifdef DEBUG
+        PRINT()
+        #endif
+        return;
+    }
+    uint32_t tmp_num = pnode->node_org[offset].key_node.maxarr[tmp_i];
+    kv_pair tmp_list_j[LISTS];
+    memcpy(tmp_list2, pnode->node_org[offset].data_node.kv_data[tmp_num][], sizeof(kv_pair) * LISTS);
+    memcpy(pnode->node_org[offset].data_node.kv_data[tmp_num][], tmp_list_i, sizeof(kv_pair) * LISTS);
+    pnode->node_org[offset].key_node.maxarr[tmp_num] = max_num_j;
+
+    
+
     
 }
 
