@@ -259,7 +259,235 @@ uint32_t tree_depth(node_array* pnode, uint32_t offset, uint32_t inter_node)
     return rightdepth > leftdepth ? rightdepth + 1 : leftdepth + 1;
 }
 
-bool Balance_cst_tree(node_array* pnode, uint32_t offset)
+
+/* a new way for rotation which we can test the new inserted node's grandpa node have another child node.
+ * If take the tree is balanced tree. And drop the old way of rotation. */
+ 
+bool Ggrandpa_balance(sin_node_pair* parent_node, node_array* pnode, uint32_t offset, uint32_t inter_offset)
+{
+    uint32_t inter_index = inter_offset;
+    uint32_t counter = 3;
+    while(counter)
+    {
+    if(!inter_index)
+    {
+        inter_index = offset + KEY_NUM;
+    if(inter_index % 2 == 0)
+        {
+            inter_index = inter_index - 1 >> 1;
+            counter--;
+        }
+        else
+        {
+            inter_index = inter_index - 2 >> 1;
+            counter--;
+        }
+    }
+    else if(!(inter_index % 2))
+    {
+        inter_index = inter_index - 2 >> 1;
+        counter--;
+    }
+    else if(inter_index % 2)
+    {
+        inter_index = inter_index - 1 >> 1;
+        counter--;
+    }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*uint32_t tmp_num = 0x00;
+    uint32_t tmp_index = 0x00;
+    if(inter_num == 0x00)
+    {
+        tmp_index = offset + KEY_NUM;
+        if((tmp_index % 2) == 0)
+        {
+            tmp_index = (tmp_index - 2) >> 1;
+            if(tmp_index % 2 == 0)
+            {
+                tmp_index = tmp_index - 2 >> 1;
+                if(parent_node.key_node.maxarr[(tmp_index << 1) + 1] == 0)
+                {
+                        
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                tmp_index = tmp_index - 1 >> 1;
+                if(pnode->node_org[offset].key_node.maxarr[(tmp_index << 1) + 2] == 0)
+                {
+                    
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            tmp_index = (tmp_index - 1) >> 1;
+            if(tmp_index % 2 == 0)
+            {
+                tmp_index = tmp_index - 2 >> 1;
+                if(parent_node.key_node.maxarr[(tmp_index << 1) - 1] == 0)
+                {
+                     
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                tmp_index = tmp_index - 1 >> 1;
+                if(parent_node.key_node.maxarr[(tmp_index << 1) - 2] == 0)
+                {
+                    
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        }
+    else if(inter_num % 2 == 0 && inter_num)
+    {
+        tmp_index = inter_num - 2 >> 1;
+        if(tmp_index == 0)
+        {
+            tmp_index = offset + KEY_NUM;
+            if(tmp_index % 2 == 0)
+            {
+                tmp_index = tmp_index - 2 >> 1;
+                if(pnode->node_org[(tmp_index << 1) + 1 - KEY_NUM].maxarr[0] == 0)
+                {
+
+                }
+                return true;
+            }
+            else
+            {
+                tmp_index = tmp_index - 1 >> 1;
+                if(pnode->node_org[(tmp_index << 1) + 2 - KEY_NUM].maxarr[0] == 0)
+                {
+                    
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        }
+        else if(tmp_index != 0 && tmp_index % 2 == 0)
+        {
+            tmp_index = tmp_index - 2 >> 1;
+            if(pnode->node_org[offset].key_node.maxarr[(tmp_index << 1) - 1] == 0)
+            {
+                
+            }
+            else
+            {
+                return true;
+            }
+        }
+        else if(tmp_index != 0 && tmp_index % 2 != 0)
+        {
+            tmp_index = tmp_index - 1 >> 1;
+            if(pnode->node_org[offset].key_node.maxarr[(tmp_index << 1) - 2] == 0)
+            {
+                
+            }
+            else
+            {
+                return true;
+            }
+        }
+    }
+    else if(inter_num % 2 != 0 && inter_num)
+    {
+        tmp_index = inter_num - 1 >> 1;
+        if(tmp_index == 0)
+        {
+            tmp_index = offset + KEY_NUM;
+            if(tmp_index % 2 == 0)
+            {
+                tmp_index = tmp_index - 2 >> 1;
+                if(pnode->node_org[(tmp_index << 1) + 1 - KEY_NUM].maxarr[0] == 0)
+                {
+                    
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                tmp_index = tmp_index - 1 >> 1;
+                if(pnode->node_org[(tmp_index << 1) + 2 - KEY_NUM].maxarr[0] == 0)
+                {
+                    
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        }
+        else if(tmp_index != 0 && tmp_index % 2 == 0)
+        {
+            tmp_index = tmp_index - 2 >> 1;
+            if(pnode->node_org[offset].key_node.maxarr[(tmp_index << 1) + 1] == 0)
+            {
+                
+            }
+            else
+            {
+                return true;
+            }
+        }
+        else if(tmp_index != 0 && tmp_index % 2 != 0)
+        {
+            tmp_index = tmp_index - 1 >> 1;
+            if(pnode->node_org[offset].key_node.maxarr[(tmp_index << 1) + 2] == 0)
+            {
+                
+            }
+            else
+            {
+                return true;
+            }
+        }
+    }
+
+/*bool Balance_cst_tree(node_array* pnode, uint32_t offset)
 {
     uint32_t bound = (2 << KEY_LEVEL + 1);
     typedef struct
@@ -333,14 +561,14 @@ bool Balance_cst_tree(node_array* pnode, uint32_t offset)
 
 void ij_rotation(node_array* pnode, uint32_t offset, uint32_t i, uint32_t j)
 {
-    sin_node_pair* tmp_sinnode = malloc(sizeof(sin_node_pair));
+    sin_node_pair* tmp_sinnode = (sin_node_pair*)malloc(sizeof(sin_node_pair));
     node_array* child_node = pnode->node_org[offset].key_node.child_node_array;
     memcpy(tmp_sinnode, child_node->node_org[j], sizeof(sin_node_pair));
     uint32_t a = 0x00;
     uint32_t max_num_j = child_node->node_org[i].maxarr[a];
     while(child_node->node_org[i].maxarr[(a << 1) + 2] != 0)
     {
-        max_num_j child_node->node_org[i].maxarr[(a << 1) + 2];
+        max_num_j = child_node->node_org[i].maxarr[(a << 1) + 2];
         a = (a << 1) + 2;
     }
     kv_pair tmp_list_i[LISTS];
@@ -361,14 +589,14 @@ void ij_rotation(node_array* pnode, uint32_t offset, uint32_t i, uint32_t j)
     }
     uint32_t tmp_num = pnode->node_org[offset].key_node.maxarr[tmp_i];
     kv_pair tmp_list_j[LISTS];
-    memcpy(tmp_list2, pnode->node_org[offset].data_node.kv_data[tmp_num][], sizeof(kv_pair) * LISTS);
-    memcpy(pnode->node_org[offset].data_node.kv_data[tmp_num][], tmp_list_i, sizeof(kv_pair) * LISTS);
-    pnode->node_org[offset].key_node.maxarr[tmp_num] = max_num_j;
+    memcpy(tmp_list_j, pnode->node_org[offset].data_node.kv_data[tmp_i][], sizeof(kv_pair) * LISTS);
+    memcpy(pnode->node_org[offset].data_node.kv_data[tmp_i][], tmp_list_i, sizeof(kv_pair) * LISTS);
+    pnode->node_org[offset].key_node.maxarr[tmp_i] = max_num_j;
 
     
 
     
-}
+}*/
 
 
 
