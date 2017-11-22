@@ -267,33 +267,40 @@ bool Ggrandpa_balance(sin_node_pair* parent_node, node_array* pnode, uint32_t of
 {
     uint32_t inter_index = inter_offset;
     uint32_t counter = 3;
+    sin_node_pair* monitor_node = &pnode->node_org[offset];
     while(counter)
     {
-    if(!inter_index)
-    {
-        inter_index = offset + KEY_NUM;
-    if(inter_index % 2 == 0)
+        if(!inter_index)
         {
-            inter_index = inter_index - 1 >> 1;
-            counter--;
+            inter_index = offset + KEY_NUM;
+            monitor_node = parent_node;
+            if(inter_index % 2 == 0)
+            {
+                inter_index = inter_index - 2 >> 1;
+                counter--;
+            }
+            else
+            {
+                inter_index = inter_index - 1 >> 1;
+                counter--;
+            }
         }
-        else
+        else if(!(inter_index % 2))
         {
             inter_index = inter_index - 2 >> 1;
             counter--;
         }
+        else if(inter_index % 2)
+        {
+            inter_index = inter_index - 1 >> 1;
+            counter--;
+        }
     }
-    else if(!(inter_index % 2))
-    {
-        inter_index = inter_index - 2 >> 1;
-        counter--;
-    }
-    else if(inter_index % 2)
-    {
-        inter_index = inter_index - 1 >> 1;
-        counter--;
-    }
-    }
+    uint32_t left_h = 0;
+    uint32_t right_h = 0;
+
+
+}
 
 
 
