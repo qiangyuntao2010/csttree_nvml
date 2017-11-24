@@ -323,7 +323,7 @@ bool Ggrandpa_balance(sin_node_pair* parent_node, node_array* pnode, uint32_t of
 
 
 
-    /*uint32_t tmp_num = 0x00;
+    uint32_t tmp_num = 0x00;
     uint32_t tmp_index = 0x00;
     if(inter_num == 0x00)
     {
@@ -494,7 +494,7 @@ bool Ggrandpa_balance(sin_node_pair* parent_node, node_array* pnode, uint32_t of
         }
     }
 
-/*bool Balance_cst_tree(node_array* pnode, uint32_t offset)
+bool Balance_cst_tree(node_array* pnode, uint32_t offset)
 {
     uint32_t bound = (2 << KEY_LEVEL + 1);
     typedef struct
@@ -511,10 +511,11 @@ bool Ggrandpa_balance(sin_node_pair* parent_node, node_array* pnode, uint32_t of
     {
         depth_org[inter].depth = tree_depth(pnode, inter, 0);
         depth_org[inter].index = inter; 
-    }
+     }
     uint32_t max, min, max_count, min_count, rotate_count;
     max = depth_org[0].depth;
     max_count depth_org[0].index;
+    uint32_t rotate_count = 0;
     for(rotate_count = 0; rotate_count < bound; rotate_count++)
     {
         if(depth_org[rotate_count].depth > max)
@@ -537,7 +538,8 @@ bool Ggrandpa_balance(sin_node_pair* parent_node, node_array* pnode, uint32_t of
     {
         if(max_count > min_count)
         {
-            uint32_t counter = 0x00;
+            sin_node_pair* q_node = &pnode->node_org[max_count];
+            uint32_t counter = 0;
             if((max_count - min_count) != 1)
             {
                 uint32_t from = min_count;
@@ -547,11 +549,40 @@ bool Ggrandpa_balance(sin_node_pair* parent_node, node_array* pnode, uint32_t of
                     ij_rotation(tmpnode, offset, counter, counter + 1);
                 }
             }
-            if(max_count != (bound - 1))
+            node_array* q_children = q_node.key_node->child_node_array;
+            depth qnode_depth_org[bound];
+            memset(qnode_depth_org, 0x00, sizeof(depth) * bound);
+            for(inter = 0; inter < bound; inter++)
             {
-                for(counter = max_count; counter < (bound - 1); counter++)
+                depth_org[inter].depth = tree_depth(q_children, inter, 0);
+                depth_org[inter].index = inter; 
+            }
+            uint32_t qnode_max, qnode_min, qnode_max_count, qnode_min_count, qnode_rotate_count;
+            qnode_max = qnode_depth_org[0].depth;
+            qnode_max_count qnode_depth_org[0].index;
+            for(qnode_rotate_count = 0; qnode_rotate_count < bound; qnode_rotate_count++)
+            {
+                if(qnode_depth_org[qnode_rotate_count].depth > max)
                 {
-                    ij_rotation(pnode, offset, counter, counter + 1);
+                    qnode_max = height[qnode_rotate_count].depth;
+                    qnode_max_count = qnode_depth_org[qnode_rotate_count].index;
+                }
+            }
+            qnode_min = qnode_depth_org[0].depth;
+            qnode_min_count = qnode_depth_org[0].index;
+            for(qnode_rotate_count = 0; qnode_rotate_count < bound; qnode_rotate_count++)
+            {
+                if(qnode_depth_org[qnode_rotate_count].depth < qnode_min)
+                {
+                    qnode_min = qnode_depth_org[qnode_rotate_count].depth;
+                    qnode_min_count = qnode_depth_org[qnode_rotate_count].index;
+                }
+            }
+            if(qnode_max_count < bound - 1)
+            {
+                for(counter = max_count; counter < bound - 1; counter++)
+                {
+                    ij_rotation(q_node, offset, counter, counter + 1);
                 }
             }
             ij_rotation(tmpnode, max_count, min_count);
@@ -560,9 +591,13 @@ bool Ggrandpa_balance(sin_node_pair* parent_node, node_array* pnode, uint32_t of
         {
             //rotation to right                 
         }
-    }
     if(tmp->parent is not null)//?
     cst_balace();
+    }
+    else
+    {
+        return true;
+    }
 }
 
 
